@@ -14,7 +14,7 @@ interface VideoRow {
     created_at: string | null;
 }
 
-import { getPresignedVideoUrl } from '@/utils/r2/server';
+
 
 export async function getVideos(page: number = 1, limit: number = 20): Promise<Video[]> {
     const supabase = await createClient();
@@ -33,12 +33,12 @@ export async function getVideos(page: number = 1, limit: number = 20): Promise<V
     }
 
     const videos = await Promise.all((data || []).map(async (row: VideoRow) => {
-        const videoUrl = await getPresignedVideoUrl(`${row.youtube_id}.mp4`);
 
         return {
             id: row.id,
             title: row.title,
-            url: videoUrl,
+            // Use local stream proxy instead of R2 presigned URL
+            url: `/api/stream?videoId=${row.youtube_id}`,
             thumbnail: row.thumbnail_url || '',
             tags: row.tags || [],
             uploadedAt: row.published_at || row.created_at || new Date().toISOString(),

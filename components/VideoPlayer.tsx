@@ -20,6 +20,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, onClose }) => {
   const [aiAnalysis, setAiAnalysis] = useState<any>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
+  const [isLoading, setIsLoading] = useState(true);
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const controlsTimeoutRef = useRef<number | null>(null);
@@ -32,8 +34,24 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, onClose }) => {
       setProgress((v.currentTime / v.duration) * 100);
     };
 
+    const handleLoadStart = () => setIsLoading(true);
+    const handleCanPlay = () => setIsLoading(false);
+    const handleWaiting = () => setIsLoading(true);
+    const handlePlaying = () => setIsLoading(false);
+
     v.addEventListener('timeupdate', handleTimeUpdate);
-    return () => v.removeEventListener('timeupdate', handleTimeUpdate);
+    v.addEventListener('loadstart', handleLoadStart);
+    v.addEventListener('canplay', handleCanPlay);
+    v.addEventListener('waiting', handleWaiting);
+    v.addEventListener('playing', handlePlaying);
+
+    return () => {
+      v.removeEventListener('timeupdate', handleTimeUpdate);
+      v.removeEventListener('loadstart', handleLoadStart);
+      v.removeEventListener('canplay', handleCanPlay);
+      v.removeEventListener('waiting', handleWaiting);
+      v.removeEventListener('playing', handlePlaying);
+    };
   }, []);
 
   const togglePlay = () => {
@@ -74,6 +92,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, onClose }) => {
     const result = await getSmartSuggestions(video);
     setAiAnalysis(result);
     setIsAnalyzing(false);
+    setShowControls(true); // Keep controls visible
   };
 
   return (
@@ -95,8 +114,16 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, onClose }) => {
         onPlay={() => handleMouseMove()} // Reset timer when play starts
       />
 
+      {/* Loading Overlay */}
+      {isLoading && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 backdrop-blur-sm z-10 pointer-events-none">
+          <div className="w-16 h-16 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mb-4"></div>
+          <p className="text-white font-medium animate-pulse">Preparing Stream...</p>
+        </div>
+      )}
+
       {/* Overlay UI */}
-      <div className={`absolute inset-0 transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+      <div className={`absolute inset-0 transition-opacity duration-300 z-50 ${showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
         {/* Top Bar */}
         <div className="absolute top-0 inset-x-0 p-6 bg-gradient-to-b from-black/80 to-transparent flex items-center justify-between">
           <div className="flex flex-col">
@@ -110,7 +137,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, onClose }) => {
             <button 
               onClick={handleAiDeepDive}
               disabled={isAnalyzing}
-              className="p-2.5 rounded-full bg-blue-600 hover:bg-blue-500 text-white transition-all disabled:opacity-50 flex items-center gap-2"
+              className="p-2.5 rounded-full bg-blue-600 hover:bg-blue-500 text-white transition-all disabled:opacity-50 flex items-center gap-2 pointer-events-auto"
               title="AI Analysis"
             >
               <Sparkles className={`w-5 h-5 ${isAnalyzing ? 'animate-pulse' : ''}`} />
@@ -125,17 +152,19 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, onClose }) => {
 
         {/* Center Controls (Mobile focus) */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="flex items-center gap-12 pointer-events-auto">
-            <button onClick={() => skip(-10)} className="p-4 rounded-full bg-black/40 hover:bg-black/60 text-white transition-all">
-              <RotateCcw className="w-8 h-8" />
-            </button>
-            <button onClick={togglePlay} className="p-8 rounded-full bg-white text-black hover:scale-110 transition-transform">
-              {isPlaying ? <Pause className="w-10 h-10 fill-current" /> : <Play className="w-10 h-10 fill-current ml-1" />}
-            </button>
-            <button onClick={() => skip(10)} className="p-4 rounded-full bg-black/40 hover:bg-black/60 text-white transition-all">
-              <RotateCw className="w-8 h-8" />
-            </button>
-          </div>
+          {!isLoading && (
+            <div className="flex items-center gap-12 pointer-events-auto">
+              <button onClick={() => skip(-10)} className="p-4 rounded-full bg-black/40 hover:bg-black/60 text-white transition-all">
+                <RotateCcw className="w-8 h-8" />
+              </button>
+              <button onClick={togglePlay} className="p-8 rounded-full bg-white text-black hover:scale-110 transition-transform">
+                {isPlaying ? <Pause className="w-10 h-10 fill-current" /> : <Play className="w-10 h-10 fill-current ml-1" />}
+              </button>
+              <button onClick={() => skip(10)} className="p-4 rounded-full bg-black/40 hover:bg-black/60 text-white transition-all">
+                <RotateCw className="w-8 h-8" />
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Bottom Bar */}
@@ -175,7 +204,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, onClose }) => {
 
         {/* AI Analysis Panel */}
         {aiAnalysis && (
-          <div className="absolute right-6 top-24 bottom-24 w-80 bg-zinc-900/95 backdrop-blur-xl border border-zinc-800 rounded-2xl p-6 shadow-2xl overflow-y-auto animate-in slide-in-from-right duration-300">
+          <div className="absolute right-6 top-24 bottom-24 w-80 bg-zinc-900/95 backdrop-blur-xl border border-zinc-800 rounded-2xl p-6 shadow-2xl overflow-y-auto animate-in slide-in-from-right duration-300 pointer-events-auto">
             <div className="flex items-center justify-between mb-6">
               <h3 className="font-bold flex items-center gap-2 text-blue-400">
                 <Sparkles className="w-4 h-4" /> AI Insight

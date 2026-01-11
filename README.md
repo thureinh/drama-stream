@@ -49,3 +49,32 @@ A modern, mobile-first video discovery platform built with Next.js and AI capabi
    ```
 
    Open [http://localhost:3000](http://localhost:3000) to view the app.
+
+## Docker
+
+### Development (Live Editing)
+
+Run the app with hot-reloading enabled using Docker Compose:
+
+```bash
+docker compose up --build -d
+```
+
+- Access the app at: http://localhost:3000
+- Changes to files will automatically reload.
+- **Verify Dependencies**: `docker compose exec web yt-dlp --version`
+
+### Production (Standalone)
+
+Build and run the optimized production image:
+
+```bash
+# Build
+docker build -t wasabistream-ai .
+
+# Run
+docker run -p 3000:3000 wasabistream-ai
+```
+
+- Access the app at: http://localhost:3000
+- **Verify Dependencies**: `docker run --rm wasabistream-ai yt-dlp --version`
