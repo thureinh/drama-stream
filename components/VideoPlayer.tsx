@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Video } from '../types';
-import { 
-  X, Play, Pause, RotateCcw, RotateCw, Volume2, VolumeX, Maximize2, 
+import {
+  X, Play, Pause, RotateCcw, RotateCw, Volume2, VolumeX, Maximize2,
   Settings, Info, Sparkles, Tag
 } from 'lucide-react';
 import { getSmartSuggestions } from '../services/geminiService';
@@ -19,7 +19,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, onClose }) => {
   const [isMuted, setIsMuted] = useState(false);
   const [aiAnalysis, setAiAnalysis] = useState<any>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const controlsTimeoutRef = useRef<number | null>(null);
@@ -77,9 +77,10 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, onClose }) => {
   };
 
   return (
-    <div 
+    <div
       ref={playerContainerRef}
       onMouseMove={handleMouseMove}
+      onClick={handleMouseMove} // also show controls on click
       className="fixed inset-0 z-50 bg-black flex items-center justify-center overflow-hidden"
     >
       {/* Video Content - Optimized for 9:16 portrait */}
@@ -90,10 +91,12 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, onClose }) => {
         playsInline
         className="h-full w-auto max-w-full aspect-[9/16] object-contain shadow-2xl"
         onClick={togglePlay}
+        onPause={() => setShowControls(true)} // Always show controls when paused
+        onPlay={() => handleMouseMove()} // Reset timer when play starts
       />
 
       {/* Overlay UI */}
-      <div className={`absolute inset-0 transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0'}`}>
+      <div className={`absolute inset-0 transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
         {/* Top Bar */}
         <div className="absolute top-0 inset-x-0 p-6 bg-gradient-to-b from-black/80 to-transparent flex items-center justify-between">
           <div className="flex flex-col">
@@ -103,6 +106,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, onClose }) => {
             </p>
           </div>
           <div className="flex items-center gap-4">
+            {/* Analyze Button - Hidden per user request
             <button 
               onClick={handleAiDeepDive}
               disabled={isAnalyzing}
@@ -112,7 +116,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, onClose }) => {
               <Sparkles className={`w-5 h-5 ${isAnalyzing ? 'animate-pulse' : ''}`} />
               <span className="text-xs font-semibold pr-1">Analyze</span>
             </button>
-            <button onClick={onClose} className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all">
+            */}
+            <button onClick={onClose} className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all pointer-events-auto">
               <X className="w-6 h-6" />
             </button>
           </div>
@@ -134,11 +139,11 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, onClose }) => {
         </div>
 
         {/* Bottom Bar */}
-        <div className="absolute bottom-0 inset-x-0 p-6 bg-gradient-to-t from-black/90 via-black/40 to-transparent">
+        <div className="absolute bottom-0 inset-x-0 p-6 bg-gradient-to-t from-black/90 via-black/40 to-transparent pointer-events-auto">
           {/* Progress Bar */}
           <div className="w-full h-1.5 bg-white/20 rounded-full mb-6 cursor-pointer group relative">
-            <div 
-              className="h-full bg-blue-500 rounded-full transition-all relative" 
+            <div
+              className="h-full bg-blue-500 rounded-full transition-all relative"
               style={{ width: `${progress}%` }}
             >
               <div className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full scale-0 group-hover:scale-100 transition-transform border-4 border-blue-500" />
@@ -151,7 +156,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, onClose }) => {
                 {isMuted ? <VolumeX className="w-6 h-6" /> : <Volume2 className="w-6 h-6" />}
               </button>
               <div className="text-zinc-300 text-sm font-mono tracking-tighter">
-                {videoRef.current ? 
+                {videoRef.current ?
                   `${Math.floor(videoRef.current.currentTime / 60)}:${String(Math.floor(videoRef.current.currentTime % 60)).padStart(2, '0')}` : '0:00'}
                 <span className="mx-2 text-zinc-600">/</span>
                 {video.duration}
