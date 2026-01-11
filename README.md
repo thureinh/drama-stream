@@ -1,16 +1,51 @@
-# Run and deploy your AI Studio app
+# WasabiStream AI
 
-This contains everything you need to run your app locally.
+A modern, mobile-first video discovery platform built with Next.js and AI capabilities.
 
-View your app in AI Studio: https://ai.studio/apps/temp/1
+## Features
 
-## Run Locally
+- 📱 **Mobile-First Design**: Optimized for vertical video content and touch interactions.
+- 🔍 **Smart Discovery**: Advanced search, filtering, and sorting to find the perfect clip.
+- 🏷️ **Rich Metadata**: Categorization by genre and smart tagging system.
+- 🎨 **Modern UI**: Sleek, dark-mode interface powered by Tailwind CSS 4.
+- 🤖 **AI Powered**: Integration with Google GenAI for intelligent features.
 
-**Prerequisites:**  Node.js
+## Tech Stack
 
+- **Framework**: Next.js 16 (App Router)
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS 4
+- **Icons**: Lucide React
+- **AI**: Google GenAI SDK
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+## Getting Started
+
+### Prerequisites
+
+- Node.js 18+ installed on your machine.
+
+### Installation
+
+1. Clone the repository:
+   ```bash
+   git clone <repository-url>
+   cd wasabistream-ai
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Set up environment variables:
+   Create a `.env.local` file in the root directory and add your keys:
+   ```env
+   GEMINI_API_KEY=your_api_key_here
+   ```
+
+4. Run the development server:
+   ```bash
+   npm run dev
+   ```
+
+   Open [http://localhost:3000](http://localhost:3000) to view the app.
