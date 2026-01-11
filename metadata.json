@@ -1,0 +1,9 @@
+
+{
+  "name": "WasabiStream AI",
+  "description": "A high-performance video streaming application designed for vertical content hosted on Wasabi Cloud Storage, featuring AI-powered tagging and categorization.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
