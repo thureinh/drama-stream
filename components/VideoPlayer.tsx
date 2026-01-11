@@ -2,9 +2,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Video } from '../types';
 import {
   X, Play, Pause, RotateCcw, RotateCw, Volume2, VolumeX, Maximize2,
-  Settings, Info, Sparkles, Tag
+  Settings, Info, Sparkles, Tag, Moon, Sun
 } from 'lucide-react';
 import { getSmartSuggestions } from '../services/geminiService';
+import { useTheme } from './ThemeProvider';
 
 interface VideoPlayerProps {
   video: Video;
@@ -14,6 +15,7 @@ interface VideoPlayerProps {
 const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, onClose }) => {
   const [isPlaying, setIsPlaying] = useState(true);
   const [showControls, setShowControls] = useState(true);
+  const [showSettings, setShowSettings] = useState(false);
   const [progress, setProgress] = useState(0);
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
@@ -21,17 +23,22 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, onClose }) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const [isLoading, setIsLoading] = useState(true);
+  const [isDragging, setIsDragging] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const controlsTimeoutRef = useRef<number | null>(null);
+
+  const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
 
     const handleTimeUpdate = () => {
-      setProgress((v.currentTime / v.duration) * 100);
+      if (!isDragging) {
+        setProgress((v.currentTime / v.duration) * 100);
+      }
     };
 
     const handleLoadStart = () => setIsLoading(true);
@@ -52,7 +59,42 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, onClose }) => {
       v.removeEventListener('waiting', handleWaiting);
       v.removeEventListener('playing', handlePlaying);
     };
-  }, []);
+  }, [isDragging]);
+
+  const handleSeek = (e: React.MouseEvent | MouseEvent, progressBar: HTMLDivElement) => {
+    const rect = progressBar.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const percentage = Math.min(Math.max(x / rect.width, 0), 1);
+    return percentage;
+  };
+
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.preventDefault(); // Prevent text selection
+    setIsDragging(true);
+    const progressBar = e.currentTarget;
+
+    // Initial seek on click
+    const percentage = handleSeek(e, progressBar);
+    setProgress(percentage * 100);
+
+    const handleMouseMove = (mmE: MouseEvent) => {
+      const p = handleSeek(mmE, progressBar);
+      setProgress(p * 100);
+    };
+
+    const handleMouseUp = (muE: MouseEvent) => {
+      if (videoRef.current) {
+        const p = handleSeek(muE, progressBar);
+        videoRef.current.currentTime = p * videoRef.current.duration;
+      }
+      setIsDragging(false);
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+  };
 
   const togglePlay = () => {
     if (videoRef.current?.paused) {
@@ -84,8 +126,20 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, onClose }) => {
   const handleMouseMove = () => {
     setShowControls(true);
     if (controlsTimeoutRef.current) window.clearTimeout(controlsTimeoutRef.current);
-    controlsTimeoutRef.current = window.setTimeout(() => setShowControls(false), 3000);
+    if (!showSettings) {
+      controlsTimeoutRef.current = window.setTimeout(() => setShowControls(false), 3000);
+    }
   };
+
+  useEffect(() => {
+    if (showSettings) {
+      setShowControls(true);
+      if (controlsTimeoutRef.current) window.clearTimeout(controlsTimeoutRef.current);
+    } else {
+      // Restart timer when settings close
+      handleMouseMove();
+    }
+  }, [showSettings]);
 
   const handleAiDeepDive = async () => {
     setIsAnalyzing(true);
@@ -100,7 +154,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, onClose }) => {
       ref={playerContainerRef}
       onMouseMove={handleMouseMove}
       onClick={handleMouseMove} // also show controls on click
-      className="fixed inset-0 z-50 bg-black flex items-center justify-center overflow-hidden"
+      className="fixed inset-0 z-50 bg-white dark:bg-black flex items-center justify-center overflow-hidden"
     >
       {/* Video Content - Optimized for 9:16 portrait */}
       <video
@@ -128,7 +182,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, onClose }) => {
         <div className="absolute top-0 inset-x-0 p-6 bg-gradient-to-b from-black/80 to-transparent flex items-center justify-between">
           <div className="flex flex-col">
             <h2 className="text-xl font-bold text-white drop-shadow-md">{video.title}</h2>
-            <p className="text-zinc-400 text-sm flex items-center gap-2">
+            <p className="text-zinc-300 text-sm flex items-center gap-2">
               <Tag className="w-3 h-3" /> {video.category} • {video.tags.join(', ')}
             </p>
           </div>
@@ -150,6 +204,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, onClose }) => {
           </div>
         </div>
 
+
+
         {/* Center Controls (Mobile focus) */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           {!isLoading && (
@@ -170,7 +226,10 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, onClose }) => {
         {/* Bottom Bar */}
         <div className="absolute bottom-0 inset-x-0 p-6 bg-gradient-to-t from-black/90 via-black/40 to-transparent pointer-events-auto">
           {/* Progress Bar */}
-          <div className="w-full h-1.5 bg-white/20 rounded-full mb-6 cursor-pointer group relative">
+          <div
+            className="w-full h-1.5 bg-white/20 rounded-full mb-6 cursor-pointer group relative py-2 -my-2 bg-clip-content"
+            onMouseDown={handleMouseDown}
+          >
             <div
               className="h-full bg-blue-500 rounded-full transition-all relative"
               style={{ width: `${progress}%` }}
@@ -191,19 +250,50 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, onClose }) => {
                 {video.duration}
               </div>
             </div>
-            <div className="flex items-center gap-4">
-              <button className="text-white hover:text-blue-400 transition-colors">
-                <Settings className="w-6 h-6" />
-              </button>
-              <button onClick={handleFullscreen} className="text-white hover:text-blue-400 transition-colors">
-                <Maximize2 className="w-6 h-6" />
-              </button>
-            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowSettings(!showSettings); }}
+              className={`transition-colors ${showSettings ? 'text-blue-400' : 'text-white hover:text-blue-400'}`}
+            >
+              <Settings className="w-6 h-6" />
+            </button>
+            <button onClick={handleFullscreen} className="text-white hover:text-blue-400 transition-colors">
+              <Maximize2 className="w-6 h-6" />
+            </button>
           </div>
         </div>
 
-        {/* AI Analysis Panel */}
-        {aiAnalysis && (
+
+        {/* Settings Menu (Moved here for better stacking) */}
+        {showSettings && (
+          <div className="absolute right-6 bottom-24 w-64 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 shadow-2xl animate-in slide-in-from-bottom-2 fade-in duration-200 z-[60] pointer-events-auto">
+            <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-4 px-2">Settings</h3>
+            <div className="space-y-1">
+              <button
+                onClick={toggleTheme}
+                className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors group"
+              >
+                <div className="flex items-center gap-3">
+                  {theme === 'dark' ? (
+                    <Moon className="w-5 h-5 text-zinc-600 dark:text-zinc-400" />
+                  ) : (
+                    <Sun className="w-5 h-5 text-orange-500" />
+                  )}
+                  <span className="text-sm text-zinc-700 dark:text-zinc-300">Appearance</span>
+                </div>
+                <span className="text-xs font-medium text-zinc-500 bg-zinc-100 dark:bg-zinc-800 px-2 py-1 rounded">
+                  {theme === 'dark' ? 'Dark' : 'Light'}
+                </span>
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* AI Analysis Panel */}
+      {
+        aiAnalysis && (
           <div className="absolute right-6 top-24 bottom-24 w-80 bg-zinc-900/95 backdrop-blur-xl border border-zinc-800 rounded-2xl p-6 shadow-2xl overflow-y-auto animate-in slide-in-from-right duration-300 pointer-events-auto">
             <div className="flex items-center justify-between mb-6">
               <h3 className="font-bold flex items-center gap-2 text-blue-400">
@@ -238,8 +328,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, onClose }) => {
               </div>
             </div>
           </div>
-        )}
-      </div>
+        )
+      }
     </div>
   );
 };

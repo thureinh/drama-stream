@@ -10,14 +10,14 @@ interface VideoCardProps {
 
 const VideoCard: React.FC<VideoCardProps> = ({ video, onSelect }) => {
   return (
-    <div 
+    <div
       onClick={() => onSelect(video)}
-      className="group relative flex flex-col cursor-pointer bg-zinc-900/50 rounded-xl overflow-hidden border border-zinc-800 hover:border-blue-500/50 transition-all duration-300 transform hover:-translate-y-1"
+      className="group relative flex flex-col cursor-pointer bg-white dark:bg-zinc-900/50 rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800 hover:border-blue-500/50 transition-all duration-300 transform hover:-translate-y-1 shadow-sm dark:shadow-none"
     >
       {/* Thumbnail Container (Portrait 9:16) */}
       <div className="relative aspect-[9/16] overflow-hidden">
-        <img 
-          src={video.thumbnail} 
+        <img
+          src={video.thumbnail}
           alt={video.title}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
         />
@@ -37,15 +37,15 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onSelect }) => {
 
       {/* Info Section */}
       <div className="p-4">
-        <h3 className="text-sm font-medium text-zinc-100 truncate mb-2 group-hover:text-blue-400 transition-colors">
+        <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate mb-2 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors">
           {video.title}
         </h3>
-        <div className="flex items-center justify-between text-[11px] text-zinc-500">
+        <div className="flex items-center justify-between text-[11px] text-zinc-500 dark:text-zinc-500">
           <div className="flex items-center gap-1">
             <Clock className="w-3 h-3" />
             <span>{new Date(video.uploadedAt).toLocaleDateString()}</span>
           </div>
-          <div className="font-mono bg-zinc-800 px-1.5 rounded uppercase">
+          <div className="font-mono bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 px-1.5 rounded uppercase">
             {video.duration}
           </div>
         </div>

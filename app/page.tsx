@@ -10,6 +10,8 @@ import {
 import { Video, SortOption } from '../types';
 import VideoCard from '../components/VideoCard';
 import VideoPlayer from '../components/VideoPlayer';
+import { useTheme } from '../components/ThemeProvider';
+import { Moon, Sun } from 'lucide-react';
 
 const Page: React.FC = () => {
     const [videos, setVideos] = useState<Video[]>([]);
@@ -19,6 +21,8 @@ const Page: React.FC = () => {
     const [sortBy, setSortBy] = useState<SortOption>(SortOption.NEWEST);
     const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [showSettings, setShowSettings] = useState(false);
+    const { theme, toggleTheme } = useTheme();
 
     // Fetch videos from API
     useEffect(() => {
@@ -68,16 +72,16 @@ const Page: React.FC = () => {
 
     if (isLoading) {
         return (
-            <div className="flex min-h-screen items-center justify-center bg-black text-zinc-100">
+            <div className="flex min-h-screen items-center justify-center bg-white dark:bg-black text-zinc-900 dark:text-zinc-100">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-600"></div>
             </div>
         );
     }
 
     return (
-        <div className="flex min-h-screen bg-black text-zinc-100">
+        <div className="flex min-h-screen bg-zinc-50 dark:bg-black text-zinc-900 dark:text-zinc-100">
             {/* Sidebar - Discovery Focus */}
-            <aside className={`fixed lg:relative inset-y-0 left-0 z-40 w-64 bg-zinc-950 border-r border-zinc-900 transition-transform duration-300 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+            <aside className={`fixed lg:relative inset-y-0 left-0 z-40 w-64 bg-white dark:bg-zinc-950 border-r border-zinc-200 dark:border-zinc-900 transition-transform duration-300 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
                 <div className="flex flex-col h-full">
                     <div className="p-6 flex items-center justify-between">
                         <div className="flex items-center gap-3">
@@ -88,7 +92,7 @@ const Page: React.FC = () => {
                         </div>
                         <button
                             onClick={() => setIsSidebarOpen(false)}
-                            className="lg:hidden p-2 text-zinc-400 hover:text-white rounded-lg hover:bg-white/10 transition-colors"
+                            className="lg:hidden p-2 text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 transition-colors"
                         >
                             <CloseIcon className="w-6 h-6" />
                         </button>
@@ -99,19 +103,19 @@ const Page: React.FC = () => {
                         <button className="w-full flex items-center gap-3 px-4 py-2.5 text-red-500 bg-red-500/10 rounded-lg font-medium">
                             <Compass className="w-4 h-4" /> Discover
                         </button>
-                        <button className="w-full flex items-center gap-3 px-4 py-2.5 text-zinc-400 hover:bg-zinc-900 hover:text-white rounded-lg transition-all group">
+                        <button className="w-full flex items-center gap-3 px-4 py-2.5 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:text-zinc-900 dark:hover:text-white rounded-lg transition-all group">
                             <Flame className="w-4 h-4 group-hover:text-red-500" /> Trending
                         </button>
-                        <button className="w-full flex items-center gap-3 px-4 py-2.5 text-zinc-400 hover:bg-zinc-900 hover:text-white rounded-lg transition-all">
+                        <button className="w-full flex items-center gap-3 px-4 py-2.5 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:text-zinc-900 dark:hover:text-white rounded-lg transition-all">
                             <Users className="w-4 h-4" /> Following
                         </button>
 
                         <div className="pt-6">
                             <div className="text-[10px] text-zinc-500 font-bold tracking-widest uppercase px-4 py-3">Library</div>
-                            <button className="w-full flex items-center gap-3 px-4 py-2.5 text-zinc-400 hover:bg-zinc-900 hover:text-white rounded-lg transition-all">
+                            <button className="w-full flex items-center gap-3 px-4 py-2.5 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:text-zinc-900 dark:hover:text-white rounded-lg transition-all">
                                 <Star className="w-4 h-4" /> Favorites
                             </button>
-                            <button className="w-full flex items-center gap-3 px-4 py-2.5 text-zinc-400 hover:bg-zinc-900 hover:text-white rounded-lg transition-all">
+                            <button className="w-full flex items-center gap-3 px-4 py-2.5 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:text-zinc-900 dark:hover:text-white rounded-lg transition-all">
                                 <Clock className="w-4 h-4" /> History
                             </button>
                         </div>
@@ -123,7 +127,7 @@ const Page: React.FC = () => {
                                     <button
                                         key={cat}
                                         onClick={() => setSelectedCategory(cat)}
-                                        className={`w-full text-left px-4 py-2 text-sm rounded-lg transition-all ${selectedCategory === cat ? 'bg-zinc-800 text-white font-medium' : 'text-zinc-500 hover:text-zinc-300'}`}
+                                        className={`w-full text-left px-4 py-2 text-sm rounded-lg transition-all ${selectedCategory === cat ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white font-medium' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300'}`}
                                     >
                                         {cat}
                                     </button>
@@ -138,7 +142,7 @@ const Page: React.FC = () => {
                                     <button
                                         key={tag}
                                         onClick={() => setSearchQuery(tag)}
-                                        className="px-2 py-1 bg-zinc-900 border border-zinc-800 text-[10px] rounded-md text-zinc-400 hover:border-zinc-700 transition-colors"
+                                        className="px-2 py-1 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-[10px] rounded-md text-zinc-600 dark:text-zinc-400 hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors"
                                     >
                                         #{tag}
                                     </button>
@@ -152,9 +156,9 @@ const Page: React.FC = () => {
             {/* Main Content Area */}
             <main className="flex-1 flex flex-col h-screen overflow-hidden">
                 {/* Header */}
-                <header className="h-20 bg-black/40 backdrop-blur-md border-b border-zinc-900 flex items-center justify-between px-6 shrink-0 z-30">
+                <header className="h-20 bg-white/40 dark:bg-black/40 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-900 flex items-center justify-between px-6 shrink-0 z-30">
                     <div className="flex items-center gap-4 flex-1 max-w-2xl">
-                        <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="lg:hidden p-2 text-zinc-400 hover:text-white">
+                        <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="lg:hidden p-2 text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white">
                             <Menu className="w-6 h-6" />
                         </button>
                         <div className="relative w-full">
@@ -164,13 +168,13 @@ const Page: React.FC = () => {
                                 placeholder="Search for videos, creators, or genres..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full bg-zinc-900 border border-zinc-800 rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500/50 transition-all"
+                                className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500/50 transition-all text-zinc-900 dark:text-zinc-100"
                             />
                         </div>
                     </div>
 
                     <div className="flex items-center gap-3 ml-6">
-                        <div className="flex items-center bg-zinc-900 rounded-xl border border-zinc-800 p-1">
+                        <div className="flex items-center bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-1">
                             {Object.values(SortOption).map(option => {
                                 let label: React.ReactNode = option.split(' ')[0];
                                 if (option === SortOption.NAME_ASC) {
@@ -185,16 +189,48 @@ const Page: React.FC = () => {
                                     <button
                                         key={option}
                                         onClick={() => setSortBy(option)}
-                                        className={`px-3 py-1.5 text-[10px] font-bold rounded-lg transition-all ${sortBy === option ? 'bg-zinc-800 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-400'}`}
+                                        className={`px-3 py-1.5 text-[10px] font-bold rounded-lg transition-all ${sortBy === option ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-400'}`}
                                     >
                                         {label}
                                     </button>
                                 );
                             })}
                         </div>
-                        <button className="p-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white transition-colors">
-                            <Settings className="w-5 h-5" />
-                        </button>
+                        <div className="relative">
+                            <button
+                                onClick={() => setShowSettings(!showSettings)}
+                                className={`p-2.5 rounded-xl border transition-colors ${showSettings ? 'bg-zinc-100 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-white' : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-zinc-900 dark:hover:text-white'}`}
+                            >
+                                <Settings className="w-5 h-5" />
+                            </button>
+
+                            {showSettings && (
+                                <div className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 shadow-xl z-50">
+                                    <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-4 px-2">Settings</h3>
+                                    <div className="space-y-1">
+                                        <button
+                                            onClick={() => {
+                                                toggleTheme();
+                                                // Optional: keep it open or close it. Keeping it open is usually better UX for toggles
+                                            }}
+                                            className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors group"
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                {theme === 'dark' ? (
+                                                    <Moon className="w-5 h-5 text-zinc-600 dark:text-zinc-400" />
+                                                ) : (
+                                                    <Sun className="w-5 h-5 text-orange-500" />
+                                                )}
+                                                <span className="text-sm text-zinc-700 dark:text-zinc-300">Appearance</span>
+                                            </div>
+                                            <span className="text-xs font-medium text-zinc-500 bg-zinc-100 dark:bg-zinc-800 px-2 py-1 rounded">
+                                                {theme === 'dark' ? 'Dark' : 'Light'}
+                                            </span>
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                         <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-red-600 to-rose-600 flex items-center justify-center text-sm font-bold border-2 border-black">
                             US
                         </div>
@@ -202,18 +238,18 @@ const Page: React.FC = () => {
                 </header>
 
                 {/* Streaming Grid */}
-                <section className="flex-1 overflow-y-auto p-6 md:p-8 bg-zinc-950/50">
+                <section className="flex-1 overflow-y-auto p-6 md:p-8 bg-zinc-50/50 dark:bg-zinc-950/50">
                     <div className="max-w-7xl mx-auto">
                         <div className="flex items-center justify-between mb-8">
                             <div>
-                                <h2 className="text-2xl font-bold text-white mb-1">
+                                <h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-1">
                                     {selectedCategory === 'All' ? 'Discover New Clips' : `${selectedCategory} Videos`}
                                 </h2>
                                 <p className="text-zinc-500 text-sm">Curated selection of mobile-first vertical content</p>
                             </div>
                             <div className="flex items-center gap-2">
                                 <span className="text-xs text-zinc-500">View:</span>
-                                <button className="p-2 bg-zinc-800 text-red-500 rounded-lg"><LayoutGrid className="w-4 h-4" /></button>
+                                <button className="p-2 bg-zinc-100 dark:bg-zinc-800 text-red-500 rounded-lg"><LayoutGrid className="w-4 h-4" /></button>
                                 <button className="p-2 text-zinc-500"><Filter className="w-4 h-4" /></button>
                             </div>
                         </div>
@@ -230,10 +266,10 @@ const Page: React.FC = () => {
                             </div>
                         ) : (
                             <div className="flex flex-col items-center justify-center py-32 text-center">
-                                <div className="w-20 h-20 bg-zinc-900 rounded-full flex items-center justify-center mb-6 border border-zinc-800">
-                                    <Search className="w-8 h-8 text-zinc-700" />
+                                <div className="w-20 h-20 bg-zinc-100 dark:bg-zinc-900 rounded-full flex items-center justify-center mb-6 border border-zinc-200 dark:border-zinc-800">
+                                    <Search className="w-8 h-8 text-zinc-400 dark:text-zinc-700" />
                                 </div>
-                                <h3 className="text-xl font-bold text-zinc-300 mb-2">No videos found</h3>
+                                <h3 className="text-xl font-bold text-zinc-700 dark:text-zinc-300 mb-2">No videos found</h3>
                                 <p className="text-zinc-500 max-w-xs">We couldn't find any clips matching your request. Try exploring another genre.</p>
                                 <button
                                     onClick={() => { setSearchQuery(''); setSelectedCategory('All'); }}
