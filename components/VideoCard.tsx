@@ -17,7 +17,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
       {/* Thumbnail Container (Portrait 9:16) */}
       <div className="relative aspect-[9/16] overflow-hidden">
         <img
-          src={video.thumbnail}
+          src={video.thumbnail || undefined}
           alt={video.title}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
         />

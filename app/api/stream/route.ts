@@ -2,40 +2,30 @@ import { NextRequest, NextResponse } from 'next/server';
 import { spawn } from 'child_process';
 import { ensureCookiesFile } from '@/utils/cookies';
 
+// Keep this constant! It ensures yt-dlp and fetch look identical to YouTube.
+const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+
 export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const videoId = searchParams.get('videoId');
 
-    if (!videoId) {
-        return new NextResponse('Missing videoId', { status: 400 });
-    }
+    if (!videoId) return new NextResponse('Missing videoId', { status: 400 });
 
     try {
-        // Prepare cookies if available
         const cookiesPath = await ensureCookiesFile();
 
-        // 1. Get the direct video URL using yt-dlp
-        // -f b: Best quality (video+audio combined if available, or best single file)
-        // -g: Get URL only
+        // 1. Get the direct URL
         const directUrl = await new Promise<string>((resolve, reject) => {
             const args = [
                 '--no-cache-dir',
                 '--no-playlist',
-                // '--force-ipv4', // REMOVED: Sometimes IPv6 is better for availability.
-                '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                '--user-agent', USER_AGENT, // Match the fetch request
                 '-f', 'b',
                 '-g',
             ];
 
-            // Add cookies if available
-            if (cookiesPath) {
-                args.push('--cookies', cookiesPath);
-            }
-
-            // Explicitly set JS runtime to node to avoid warnings/errors
-            // We assume node is available in the environment (it is in the Dockerfile)
-            args.push('--js-runtimes', 'node');
-
+            if (cookiesPath) args.push('--cookies', cookiesPath);
+            args.push('--js-runtimes', 'node'); // Fixes the "No JS runtime" warning
             args.push(`https://www.youtube.com/watch?v=${videoId}`);
 
             const ytDlp = spawn('yt-dlp', args);
@@ -43,60 +33,43 @@ export async function GET(request: NextRequest) {
             let output = '';
             let errorOutput = '';
 
-            ytDlp.stdout.on('data', (data) => {
-                output += data.toString();
-            });
-
-            ytDlp.stderr.on('data', (data) => {
-                errorOutput += data.toString();
-            });
+            ytDlp.stdout.on('data', (data) => output += data.toString());
+            ytDlp.stderr.on('data', (data) => errorOutput += data.toString());
 
             ytDlp.on('close', (code) => {
-                const trimmedOutput = output.trim();
-                // Check if output looks like a URL
-                if (code === 0 && trimmedOutput.startsWith('http')) {
-                    resolve(trimmedOutput);
+                const cleanUrl = output.trim().split('\n')[0];
+                if (code === 0 && cleanUrl.startsWith('http')) {
+                    resolve(cleanUrl);
                 } else {
-                    reject(new Error(`yt-dlp failed (code ${code}). Output: ${trimmedOutput.slice(0, 100)}... Error: ${errorOutput}`));
+                    reject(new Error(`yt-dlp error: ${errorOutput}`));
                 }
             });
         });
 
-        if (!directUrl) {
-            return new NextResponse('Failed to retrieve video URL', { status: 500 });
-        }
+        // 2. Fetch the video stream using the SAME User-Agent
+        // If you remove this header, fetch uses 'node-fetch/1.0', which mismatches yt-dlp -> 403 Error
+        const headers: HeadersInit = {
+            'User-Agent': USER_AGENT,
+        };
 
-        // 2. Prepare headers for upstream request
-        const headers: HeadersInit = {};
         const range = request.headers.get('range');
-        if (range) {
-            headers['Range'] = range;
-        }
+        if (range) headers['Range'] = range;
 
-        // 3. Fetch from upstream YouTube URL
         const upstreamResponse = await fetch(directUrl, { headers });
 
         if (!upstreamResponse.body) {
-            return new NextResponse('No content from upstream', { status: 502 });
+            return new NextResponse('Upstream Error', { status: 502 });
         }
 
-        // 4. Forward upstream headers to client
+        // 3. Pipe the stream back to the client
         const responseHeaders: HeadersInit = {};
+        const headersToCopy = ['content-length', 'content-range', 'content-type', 'accept-ranges'];
 
-        // Critical headers for streaming
-        const contentLength = upstreamResponse.headers.get('content-length');
-        if (contentLength) responseHeaders['Content-Length'] = contentLength;
+        headersToCopy.forEach(h => {
+            const val = upstreamResponse.headers.get(h);
+            if (val) responseHeaders[h] = val;
+        });
 
-        const contentRange = upstreamResponse.headers.get('content-range');
-        if (contentRange) responseHeaders['Content-Range'] = contentRange;
-
-        const contentType = upstreamResponse.headers.get('content-type');
-        if (contentType) responseHeaders['Content-Type'] = contentType;
-
-        const acceptRanges = upstreamResponse.headers.get('accept-ranges');
-        if (acceptRanges) responseHeaders['Accept-Ranges'] = acceptRanges;
-
-        // 5. Return stream
         return new NextResponse(upstreamResponse.body as any, {
             status: upstreamResponse.status,
             statusText: upstreamResponse.statusText,
@@ -104,7 +77,7 @@ export async function GET(request: NextRequest) {
         });
 
     } catch (error) {
-        console.error('Stream proxy error:', error);
+        console.error('Proxy error:', error);
         return new NextResponse('Internal Server Error', { status: 500 });
     }
 }

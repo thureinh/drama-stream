@@ -20,15 +20,21 @@ const Page: React.FC = () => {
     const [sortBy, setSortBy] = useState<SortOption>(SortOption.NEWEST);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [hasMore, setHasMore] = useState(true);
     const { theme, toggleTheme } = useTheme();
+
+    const videosPerPage = 20;
 
     // Fetch videos from API
     useEffect(() => {
         async function fetchVideos() {
+            setIsLoading(true);
             try {
-                const res = await fetch('/api/videos');
+                const res = await fetch(`/api/videos?page=${currentPage}&limit=${videosPerPage}`);
                 const data = await res.json();
                 setVideos(data);
+                setHasMore(data.length === videosPerPage);
             } catch (error) {
                 console.error('Failed to fetch videos:', error);
             } finally {
@@ -36,7 +42,7 @@ const Page: React.FC = () => {
             }
         }
         fetchVideos();
-    }, []);
+    }, [currentPage, videosPerPage]);
 
     // Extract unique categories and tags from fetched videos
     const categories = useMemo(() => ['All', ...Array.from(new Set(videos.map(v => v.category)))], [videos]);
@@ -273,6 +279,30 @@ const Page: React.FC = () => {
                                     className="mt-6 text-red-500 hover:text-red-400 font-medium"
                                 >
                                     Reset Discovery
+                                </button>
+                            </div>
+                        )}
+
+                        {/* Pagination Controls */}
+                        {filteredVideos.length > 0 && (
+                            <div className="flex items-center justify-center gap-4 mt-12">
+                                <button
+                                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                                    disabled={currentPage === 1}
+                                    className="px-6 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl font-medium text-zinc-900 dark:text-white hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white dark:disabled:hover:bg-zinc-900 shadow-sm"
+                                >
+                                    Previous
+                                </button>
+                                <div className="flex items-center gap-2 px-4 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-sm">
+                                    <span className="text-sm text-zinc-500">Page</span>
+                                    <span className="text-lg font-bold text-zinc-900 dark:text-white">{currentPage}</span>
+                                </div>
+                                <button
+                                    onClick={() => setCurrentPage(prev => prev + 1)}
+                                    disabled={!hasMore}
+                                    className="px-6 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl font-medium text-zinc-900 dark:text-white hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white dark:disabled:hover:bg-zinc-900 shadow-sm"
+                                >
+                                    Next
                                 </button>
                             </div>
                         )}
