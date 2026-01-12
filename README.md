@@ -77,9 +77,16 @@ Build and run the optimized production image:
 # Build
 docker build -t wasabistream-ai .
 
-# Run
+# Run with Base64 cookies (Env Var)
 docker run -d -p 80:3000 --env-file .env.local --restart always --name wasabistream-ai wasabistream-ai
 
+# OR Run with cookies.txt file mounted (Recommended if Base64 fails)
+# Ensure your cookies.txt is on the server (e.g. ~/drama-stream/cookies.txt)
+docker run -d -p 80:3000 \
+  -v $(pwd)/cookies.txt:/app/cookies.txt \
+  --env-file .env.local \
+  --restart always \
+  --name wasabistream-ai wasabistream-ai
 ```
 
 - Access the app at: http://localhost:3000

@@ -3,12 +3,28 @@ import path from 'path';
 import os from 'os';
 
 const COOKIES_FILE_PATH = path.join(os.tmpdir(), 'youtube_cookies.txt');
+const LOCAL_COOKIES_PATH = path.join(process.cwd(), 'cookies.txt');
 
 /**
- * Ensures the cookies file exists if the YOUTUBE_COOKIES environment variable is set.
- * Returns the path to the cookies file if created/exists, or null if no cookies provided.
+ * Ensures the cookies file exists.
+ * Priority:
+ * 1. 'cookies.txt' in the project root (e.g., mounted volume).
+ * 2. 'YOUTUBE_COOKIES' env var (decoded base64 or raw).
+ * 
+ * Returns the path to the cookies file, or null if neither exists.
  */
 export async function ensureCookiesFile(): Promise<string | null> {
+    // 1. Check for local file
+    try {
+        if (fs.existsSync(LOCAL_COOKIES_PATH)) {
+            console.log(`[Cookies] Found local file at ${LOCAL_COOKIES_PATH}`);
+            return LOCAL_COOKIES_PATH;
+        }
+    } catch (e) {
+        console.warn('[Cookies] Failed to check local file:', e);
+    }
+
+    // 2. Fallback to Env Var
     const cookiesContent = process.env.YOUTUBE_COOKIES;
 
     if (!cookiesContent) {
