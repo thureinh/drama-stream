@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { spawn } from 'child_process';
 import { ensureCookiesFile } from '@/utils/cookies';
 
+// 1. Define a constant User Agent to ensure consistency
+const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+
 export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const videoId = searchParams.get('videoId');
@@ -11,30 +14,19 @@ export async function GET(request: NextRequest) {
     }
 
     try {
-        // Prepare cookies if available
         const cookiesPath = await ensureCookiesFile();
 
-        // 1. Get the direct video URL using yt-dlp
-        // -f b: Best quality (video+audio combined if available, or best single file)
-        // -g: Get URL only
         const directUrl = await new Promise<string>((resolve, reject) => {
             const args = [
                 '--no-cache-dir',
                 '--no-playlist',
-                '--force-ipv4',
-                '-f', 'b',
+                '--user-agent', USER_AGENT, // <--- Use constant
+                '-f', 'b', // Selects best single file with video+audio
                 '-g',
             ];
 
-            // Add cookies if available
-            if (cookiesPath) {
-                args.push('--cookies', cookiesPath);
-            }
-
-            // Explicitly set JS runtime to node to avoid warnings/errors
-            // We assume node is available in the environment (it is in the Dockerfile)
+            if (cookiesPath) args.push('--cookies', cookiesPath);
             args.push('--js-runtimes', 'node');
-
             args.push(`https://www.youtube.com/watch?v=${videoId}`);
 
             const ytDlp = spawn('yt-dlp', args);
@@ -42,21 +34,17 @@ export async function GET(request: NextRequest) {
             let output = '';
             let errorOutput = '';
 
-            ytDlp.stdout.on('data', (data) => {
-                output += data.toString();
-            });
-
-            ytDlp.stderr.on('data', (data) => {
-                errorOutput += data.toString();
-            });
+            ytDlp.stdout.on('data', (data) => output += data.toString());
+            ytDlp.stderr.on('data', (data) => errorOutput += data.toString());
 
             ytDlp.on('close', (code) => {
-                const trimmedOutput = output.trim();
-                // Check if output looks like a URL
-                if (code === 0 && trimmedOutput.startsWith('http')) {
-                    resolve(trimmedOutput);
+                // 2. Safety: Split by newline in case multiple URLs are returned and take the first one
+                const cleanUrl = output.trim().split('\n')[0];
+
+                if (code === 0 && cleanUrl.startsWith('http')) {
+                    resolve(cleanUrl);
                 } else {
-                    reject(new Error(`yt-dlp failed (code ${code}). Output: ${trimmedOutput.slice(0, 100)}... Error: ${errorOutput}`));
+                    reject(new Error(`yt-dlp failed (code ${code}). Error: ${errorOutput}`));
                 }
             });
         });
@@ -65,37 +53,38 @@ export async function GET(request: NextRequest) {
             return new NextResponse('Failed to retrieve video URL', { status: 500 });
         }
 
-        // 2. Prepare headers for upstream request
-        const headers: HeadersInit = {};
+        // 3. Prepare headers for the fetch request
+        const headers: HeadersInit = {
+            'User-Agent': USER_AGENT, // <--- CRITICAL: Must match the signer's UA
+        };
+
+        // Forward Range header (essential for seeking/scrubbing)
         const range = request.headers.get('range');
         if (range) {
             headers['Range'] = range;
         }
 
-        // 3. Fetch from upstream YouTube URL
+        // 4. Fetch from upstream with the correct headers
         const upstreamResponse = await fetch(directUrl, { headers });
 
         if (!upstreamResponse.body) {
             return new NextResponse('No content from upstream', { status: 502 });
         }
 
-        // 4. Forward upstream headers to client
+        // 5. Forward upstream headers to client
         const responseHeaders: HeadersInit = {};
+        const copyHeaders = [
+            'content-length',
+            'content-range',
+            'content-type',
+            'accept-ranges'
+        ];
 
-        // Critical headers for streaming
-        const contentLength = upstreamResponse.headers.get('content-length');
-        if (contentLength) responseHeaders['Content-Length'] = contentLength;
+        copyHeaders.forEach(header => {
+            const value = upstreamResponse.headers.get(header);
+            if (value) responseHeaders[header] = value;
+        });
 
-        const contentRange = upstreamResponse.headers.get('content-range');
-        if (contentRange) responseHeaders['Content-Range'] = contentRange;
-
-        const contentType = upstreamResponse.headers.get('content-type');
-        if (contentType) responseHeaders['Content-Type'] = contentType;
-
-        const acceptRanges = upstreamResponse.headers.get('accept-ranges');
-        if (acceptRanges) responseHeaders['Accept-Ranges'] = acceptRanges;
-
-        // 5. Return stream
         return new NextResponse(upstreamResponse.body as any, {
             status: upstreamResponse.status,
             statusText: upstreamResponse.statusText,
