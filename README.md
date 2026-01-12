@@ -73,7 +73,8 @@ Build and run the optimized production image:
 docker build -t wasabistream-ai .
 
 # Run
-docker run -p 3000:3000 wasabistream-ai
+docker run -d -p 80:3000 --env-file .env.local --restart always --name wasabistream-ai wasabistream-ai
+
 ```
 
 - Access the app at: http://localhost:3000
