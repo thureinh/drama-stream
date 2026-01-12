@@ -21,7 +21,8 @@ export async function GET(request: NextRequest) {
             const args = [
                 '--no-cache-dir',
                 '--no-playlist',
-                '--force-ipv4',
+                // '--force-ipv4', // REMOVED: Sometimes IPv6 is better for availability.
+                '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                 '-f', 'b',
                 '-g',
             ];
