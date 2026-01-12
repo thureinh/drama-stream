@@ -7,6 +7,7 @@ interface VideoRow {
     youtube_id: string;
     title: string;
     description: string | null;
+    plot_summary: string | null;
     thumbnail_url: string | null;
     duration: string | null;
     published_at: string | null;
@@ -46,6 +47,7 @@ export async function getVideos(page: number = 1, limit: number = 20): Promise<V
             size: 0,
             category: row.tags?.[0] || 'Uncategorized',
             description: row.description || undefined,
+            plot_summary: row.plot_summary || undefined,
         };
     }));
 

@@ -9,7 +9,6 @@ import {
 } from 'lucide-react';
 import { Video, SortOption } from '../types';
 import VideoCard from '../components/VideoCard';
-import VideoPlayer from '../components/VideoPlayer';
 import { useTheme } from '../components/ThemeProvider';
 import { Moon, Sun } from 'lucide-react';
 
@@ -19,7 +18,6 @@ const Page: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState<string>('All');
     const [sortBy, setSortBy] = useState<SortOption>(SortOption.NEWEST);
-    const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
     const { theme, toggleTheme } = useTheme();
@@ -260,7 +258,6 @@ const Page: React.FC = () => {
                                     <VideoCard
                                         key={video.id}
                                         video={video}
-                                        onSelect={setSelectedVideo}
                                     />
                                 ))}
                             </div>
@@ -291,13 +288,7 @@ const Page: React.FC = () => {
                 />
             )}
 
-            {/* Fullscreen Video Player */}
-            {selectedVideo && (
-                <VideoPlayer
-                    video={selectedVideo}
-                    onClose={() => setSelectedVideo(null)}
-                />
-            )}
+
         </div>
     );
 };

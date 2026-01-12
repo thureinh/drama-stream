@@ -10,6 +10,7 @@ export interface Video {
   size: number; // in bytes
   category: string;
   description?: string;
+  plot_summary?: string;
 }
 
 export enum SortOption {

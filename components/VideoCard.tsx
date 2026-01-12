@@ -2,17 +2,17 @@
 import React from 'react';
 import { Video } from '../types';
 import { Play, Clock, Tag } from 'lucide-react';
+import Link from 'next/link';
 
 interface VideoCardProps {
   video: Video;
-  onSelect: (video: Video) => void;
 }
 
-const VideoCard: React.FC<VideoCardProps> = ({ video, onSelect }) => {
+const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
   return (
-    <div
-      onClick={() => onSelect(video)}
-      className="group relative flex flex-col cursor-pointer bg-white dark:bg-zinc-900/50 rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800 hover:border-blue-500/50 transition-all duration-300 transform hover:-translate-y-1 shadow-sm dark:shadow-none"
+    <Link
+      href={`/video/${video.id}`}
+      className="group relative flex flex-col cursor-pointer bg-white dark:bg-zinc-900/50 rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800 hover:border-blue-500/50 transition-all duration-300 transform hover:-translate-y-1 shadow-sm dark:shadow-none block"
     >
       {/* Thumbnail Container (Portrait 9:16) */}
       <div className="relative aspect-[9/16] overflow-hidden">
@@ -50,7 +50,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onSelect }) => {
           </div>
         </div>
       </div>
-    </div>
+    </Link>
   );
 };
 
