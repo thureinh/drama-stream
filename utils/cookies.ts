@@ -18,24 +18,33 @@ export async function ensureCookiesFile(): Promise<string | null> {
     try {
         let finalContent = cookiesContent;
 
-        // Check if the content is Base64 encoded (no newlines implies it might be base64, 
-        // as Netscape format requires multiple lines)
-        if (!cookiesContent.includes('\n')) {
+        // Debug detection
+        const isNetscape = cookiesContent.trim().startsWith('# Netscape');
+        console.log(`[Cookies] Env var length: ${cookiesContent.length}, Starts with '# Netscape': ${isNetscape}`);
+
+        if (!isNetscape) {
+            // If it doesn't look like a cookie file, try to treat it as Base64.
+            // Remove all whitespace (newlines from wrapped base64 output)
+            const cleanBase64 = cookiesContent.replace(/\s/g, '');
             try {
-                const decoded = Buffer.from(cookiesContent, 'base64').toString('utf-8');
-                // Basic validation: Netscape cookies usually contain tabs or match start pattern
-                if (decoded.includes('\t') || decoded.startsWith('# Netscape')) {
+                const decoded = Buffer.from(cleanBase64, 'base64').toString('utf-8');
+                if (decoded.trim().startsWith('# Netscape') || decoded.includes('\t')) {
+                    console.log('[Cookies] Successfully decoded Base64 cookie content.');
                     finalContent = decoded;
+                } else {
+                    console.warn('[Cookies] Warning: Decoded content does not look like Netscape format. Using original content.');
                 }
             } catch (e) {
-                // Ignore error, assume it was just a weird single-line string (which wouldn't work anyway)
-                console.warn('Failed to decode YOUTUBE_COOKIES as Base64, using as-is.');
+                console.warn('[Cookies] Warning: Failed to decode as Base64, using original content.', e);
             }
+        } else {
+            console.log('[Cookies] Using raw content from env var.');
         }
 
         // We write the file every time to ensure freshness or simple logic. 
         // Optimization: check if content changed could be added later if needed.
         await fs.promises.writeFile(COOKIES_FILE_PATH, finalContent, 'utf-8');
+        console.log(`[Cookies] Written to ${COOKIES_FILE_PATH}`);
         return COOKIES_FILE_PATH;
     } catch (error) {
         console.error('Failed to write cookies file:', error);
