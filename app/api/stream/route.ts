@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { spawn } from 'child_process';
+import { ensureCookiesFile } from '@/utils/cookies';
 
 export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
@@ -10,20 +11,33 @@ export async function GET(request: NextRequest) {
     }
 
     try {
+        // Prepare cookies if available
+        const cookiesPath = await ensureCookiesFile();
+
         // 1. Get the direct video URL using yt-dlp
         // -f b: Best quality (video+audio combined if available, or best single file)
         // -g: Get URL only
         const directUrl = await new Promise<string>((resolve, reject) => {
-            // Added --no-cache-dir to prevent filesystem permission issues
-            // Added --no-playlist to ensure single video processing
-            const ytDlp = spawn('yt-dlp', [
+            const args = [
                 '--no-cache-dir',
                 '--no-playlist',
                 '--force-ipv4',
                 '-f', 'b',
                 '-g',
-                `https://www.youtube.com/watch?v=${videoId}`
-            ]);
+            ];
+
+            // Add cookies if available
+            if (cookiesPath) {
+                args.push('--cookies', cookiesPath);
+            }
+
+            // Explicitly set JS runtime to node to avoid warnings/errors
+            // We assume node is available in the environment (it is in the Dockerfile)
+            args.push('--js-runtimes', 'node');
+
+            args.push(`https://www.youtube.com/watch?v=${videoId}`);
+
+            const ytDlp = spawn('yt-dlp', args);
 
             let output = '';
             let errorOutput = '';
