@@ -41,6 +41,11 @@ A modern, mobile-first video discovery platform built with Next.js and AI capabi
    Create a `.env.local` file in the root directory and add your keys:
    ```env
    GEMINI_API_KEY=your_api_key_here
+   # Optional: For YouTube streaming (fixes "Sign in" errors)
+   # Encode your cookies.txt to Base64 to avoid newline issues in Docker env files:
+   # PowerShell: [Convert]::ToBase64String([IO.File]::ReadAllBytes("cookies.txt"))
+   # Linux: base64 -w 0 cookies.txt
+   YOUTUBE_COOKIES=VGhpcyBpcyBhIGJhc2U2NCBlbmNvZGVkIHN0cmluZy4uLg==
    ```
 
 4. Run the development server:

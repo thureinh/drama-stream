@@ -16,9 +16,26 @@ export async function ensureCookiesFile(): Promise<string | null> {
     }
 
     try {
+        let finalContent = cookiesContent;
+
+        // Check if the content is Base64 encoded (no newlines implies it might be base64, 
+        // as Netscape format requires multiple lines)
+        if (!cookiesContent.includes('\n')) {
+            try {
+                const decoded = Buffer.from(cookiesContent, 'base64').toString('utf-8');
+                // Basic validation: Netscape cookies usually contain tabs or match start pattern
+                if (decoded.includes('\t') || decoded.startsWith('# Netscape')) {
+                    finalContent = decoded;
+                }
+            } catch (e) {
+                // Ignore error, assume it was just a weird single-line string (which wouldn't work anyway)
+                console.warn('Failed to decode YOUTUBE_COOKIES as Base64, using as-is.');
+            }
+        }
+
         // We write the file every time to ensure freshness or simple logic. 
         // Optimization: check if content changed could be added later if needed.
-        await fs.promises.writeFile(COOKIES_FILE_PATH, cookiesContent, 'utf-8');
+        await fs.promises.writeFile(COOKIES_FILE_PATH, finalContent, 'utf-8');
         return COOKIES_FILE_PATH;
     } catch (error) {
         console.error('Failed to write cookies file:', error);
